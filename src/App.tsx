@@ -8,9 +8,11 @@ import Auth from "./pages/Auth";
 import ProfileSetup from "./pages/ProfileSetup";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import Catalog from "./pages/Catalog";
 import UserCatalog from "./pages/UserCatalog";
 import ManageFavorites from "./pages/ManageFavorites";
+import Members from "./pages/Members";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,8 +29,10 @@ const App = () => (
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/user/:userId/catalog" element={<UserCatalog />} />
+          <Route path="/members" element={<Members />} />
           <Route path="/manage-favorites" element={<ManageFavorites />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

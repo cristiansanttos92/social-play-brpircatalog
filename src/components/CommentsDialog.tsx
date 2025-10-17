@@ -70,6 +70,10 @@ export const CommentsDialog = ({ game, currentUser, isOpen, onOpenChange, onComm
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting comment...");
+    console.log("newComment:", newComment);
+    console.log("game:", game);
+    console.log("currentUser:", currentUser);
     if (!newComment.trim() || !game || !currentUser) return;
 
     const { error } = await supabase.from('comments').insert({
