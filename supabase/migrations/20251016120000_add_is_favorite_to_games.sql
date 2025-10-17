@@ -1,0 +1,2 @@
+ALTER TABLE public.games
+ADD COLUMN is_favorite BOOLEAN DEFAULT FALSE;
