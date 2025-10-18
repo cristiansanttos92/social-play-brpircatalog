@@ -3,12 +3,18 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Gamepad2, MessageSquare, Star, Plus } from 'lucide-react';
+import { Plus, ThumbsUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PersonalStats } from '@/components/dashboard/PersonalStats';
+import { NotificationsSection } from '@/components/dashboard/NotificationsSection';
+import { ContinuePlaying } from '@/components/dashboard/ContinuePlaying';
+import { FriendRecommendations } from '@/components/dashboard/FriendRecommendations';
+import { CommonGames } from '@/components/dashboard/CommonGames';
+import { FriendRankings } from '@/components/dashboard/FriendRankings';
 
 // Tipos
 interface Profile {
@@ -21,9 +27,18 @@ interface Profile {
 interface Activity {
   id: number;
   created_at: string;
-  type: 'game.new' | 'game.update' | 'comment.new';
+  type: 'game.new' | 'game.update' | 'comment.new' | 'like.game';
   metadata: any;
   profiles: Profile;
+}
+
+interface Game {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  platform: string;
+  status: string;
+  rating: number | null;
 }
 
 // Componente para um item da atividade
@@ -58,6 +73,12 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
         return (
           <p>
             comentou em <Link to={`/games/${metadata.game_id}`} className="font-semibold hover:underline">{metadata.game_title}</Link>.
+          </p>
+        );
+      case 'like.game':
+        return (
+          <p>
+            curtiu o jogo <Link to={`/games/${metadata.game_id}`} className="font-semibold hover:underline">{metadata.game_title}</Link>.
           </p>
         );
       default:
@@ -103,7 +124,16 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalGames: 0,
+    playingCount: 0,
+    completedCount: 0,
+    backlogCount: 0,
+    droppedCount: 0,
+    averageRating: 0,
+  });
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -117,6 +147,7 @@ const Dashboard = () => {
       await Promise.all([
         loadCurrentUserProfile(session.user.id),
         loadActivities(),
+        loadGames(session.user.id),
       ]);
       setLoading(false);
     };
@@ -148,35 +179,106 @@ const Dashboard = () => {
     }
   };
 
+  const loadGames = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .eq('profile_id', userId);
+
+    if (error) {
+      console.error('Error loading games:', error);
+    } else {
+      const allGames = data || [];
+      setGames(allGames);
+
+      const playing = allGames.filter(g => g.status === 'playing').length;
+      const completed = allGames.filter(g => g.status === 'completed').length;
+      const backlog = allGames.filter(g => g.status === 'backlog').length;
+      const dropped = allGames.filter(g => g.status === 'dropped').length;
+      const ratedGames = allGames.filter(g => g.rating !== null);
+      const avgRating = ratedGames.length > 0
+        ? ratedGames.reduce((sum, g) => sum + (g.rating || 0), 0) / ratedGames.length
+        : 0;
+
+      setStats({
+        totalGames: allGames.length,
+        playingCount: playing,
+        completedCount: completed,
+        backlogCount: backlog,
+        droppedCount: dropped,
+        averageRating: avgRating,
+      });
+    }
+  };
+
+  const playingGames = games.filter(g => g.status === 'playing').slice(0, 6);
+
   return (
     <div className="min-h-screen bg-background">
       <Header profile={currentUserProfile} />
       <main className="container py-8">
         <div className="flex justify-between items-center mb-6">
-            <div>
-                <h1 className="text-3xl font-bold">Feed de Atividades</h1>
-                <p className="text-muted-foreground">Veja o que a comunidade está jogando e comentando.</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Bem-vindo de volta! Veja suas estatísticas e atividades da comunidade.</p>
+          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Carregando atividades...</p>
-          </div>
-        ) : activities.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg">
-            <h3 className="text-lg font-semibold">Nenhuma atividade ainda</h3>
-            <p className="text-muted-foreground mt-2">Seja o primeiro a adicionar um jogo ou fazer um comentário!</p>
-            <Button className="mt-4" onClick={() => navigate("/catalog")}><Plus className="mr-2 h-4 w-4"/>Adicionar Jogo</Button>
+            <p className="text-muted-foreground">Carregando...</p>
           </div>
         ) : (
-          <Card>
-            <CardContent className="divide-y">
-              {activities.map(activity => (
-                <ActivityItem key={activity.id} activity={activity} />
-              ))}
-            </CardContent>
-          </Card>
+          <>
+            <PersonalStats
+              totalGames={stats.totalGames}
+              playingCount={stats.playingCount}
+              completedCount={stats.completedCount}
+              backlogCount={stats.backlogCount}
+              droppedCount={stats.droppedCount}
+              averageRating={stats.averageRating}
+            />
+
+            <div className="grid gap-8 lg:grid-cols-3 mb-8">
+              <div className="lg:col-span-2">
+                {currentUserProfile && (
+                  <NotificationsSection userId={currentUserProfile.id} />
+                )}
+              </div>
+              <div>
+                {currentUserProfile && playingGames.length > 0 && (
+                  <ContinuePlaying games={playingGames} />
+                )}
+              </div>
+            </div>
+
+            {currentUserProfile && (
+              <>
+                <FriendRecommendations userId={currentUserProfile.id} />
+                <CommonGames userId={currentUserProfile.id} />
+                <FriendRankings userId={currentUserProfile.id} />
+              </>
+            )}
+
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-2xl font-bold mb-4">Feed de Atividades</h2>
+                {activities.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                    <h3 className="text-lg font-semibold">Nenhuma atividade ainda</h3>
+                    <p className="text-muted-foreground mt-2">Seja o primeiro a adicionar um jogo ou fazer um comentário!</p>
+                    <Button className="mt-4" onClick={() => navigate("/catalog")}><Plus className="mr-2 h-4 w-4"/>Adicionar Jogo</Button>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {activities.map(activity => (
+                      <ActivityItem key={activity.id} activity={activity} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </main>
     </div>
