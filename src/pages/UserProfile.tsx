@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import gamePlaceholder from '@/assets/game-placeholder.jpg';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
-import { Star, MessageSquare, ThumbsUp } from 'lucide-react';
+import { Star, MessageSquare, ThumbsUp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CommentsDialog } from '@/components/CommentsDialog';
 import { toast } from '@/hooks/use-toast';
@@ -44,6 +44,7 @@ interface Like {
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
@@ -141,6 +142,19 @@ const UserProfile = () => {
   const openCommentsDialog = (game: Game) => {
     setSelectedGame(game);
     setIsCommentsDialogOpen(true);
+  };
+
+  const addToMyCatalog = (game: Game) => {
+    const params = new URLSearchParams();
+    params.set('title', game.title);
+    params.set('platform', game.platform);
+    params.set('status', game.status || 'backlog');
+    if (game.rating !== null && game.rating !== undefined) params.set('rating', String(game.rating));
+    // genre may not exist on older game rows — use any
+    if ((game as any).genre) params.set('genre', (game as any).genre);
+    if (game.cover_url) params.set('cover_url', game.cover_url);
+
+    navigate(`/catalog?${params.toString()}`);
   };
 
   const toggleLike = async (gameId: string) => {
@@ -346,9 +360,26 @@ const UserProfile = () => {
                           <p>{isGameLikedByCurrentUser(game.id) ? 'Descurtir' : 'Curtir'}</p>
                         </TooltipContent>
                       </Tooltip>
-                      <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={() => openCommentsDialog(game)}>
-                        <MessageSquare className="h-4 w-4"/> Comentar
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={() => openCommentsDialog(game)}>
+                            <MessageSquare className="h-4 w-4"/>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Comentar</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={() => addToMyCatalog(game)}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Adicionar ao meu catálogo</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </CardContent>
                 </Card>

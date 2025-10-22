@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,30 @@ const Catalog = () => {
 
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  // Read query params to prefill add dialog when coming from another profile
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    const title = search.get('title');
+    if (title) {
+      setFormData({
+        title: search.get('title') || '',
+        platform: search.get('platform') || '',
+        status: (search.get('status') as any) || 'backlog',
+        rating: search.get('rating') ? Number(search.get('rating')) : 0,
+        genre: search.get('genre') || '',
+        cover_url: search.get('cover_url') || '',
+      });
+      setEditingGame(null);
+      setAddEditDialogOpen(true);
+      // remove params from URL to avoid reopening
+      if (window.history && window.history.replaceState) {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
+      }
+    }
   }, []);
 
   useEffect(() => {

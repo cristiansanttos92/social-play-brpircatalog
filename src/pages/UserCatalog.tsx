@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LayoutGrid, List } from "lucide-react";
+import { Heart, MessageCircle, Plus, LayoutGrid, List } from "lucide-react";
 import gamePlaceholder from "@/assets/game-placeholder.jpg";
 import { StarRating } from "@/components/ui/star-rating";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -143,7 +143,17 @@ const UserCatalog = () => {
               <span>{game.platform}</span>
             </div>
             {game.rating && <StarRating rating={game.rating} readOnly />}
-            <Button variant="outline" size="sm" className="mt-auto" onClick={() => openCommentsDialog(game)}>Comentar</Button>
+            <div className="flex items-center gap-2 mt-auto pt-4">
+              <Button variant="outline" size="icon">
+                <Heart className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => openCommentsDialog(game)}>
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -188,7 +198,17 @@ const UserCatalog = () => {
                 {game.rating ? <StarRating rating={game.rating} readOnly /> : "-"}
               </TableCell>
               <TableCell>
-                <Button variant="outline" size="sm" onClick={() => openCommentsDialog(game)}>Comentar</Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon">
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => openCommentsDialog(game)}>
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
