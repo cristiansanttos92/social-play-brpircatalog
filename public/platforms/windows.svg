@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Windows">
+  <rect width="64" height="64" rx="14" fill="#0b1220"/>
+  <path d="M11 16.7 29.3 14v18.1H11V16.7Zm21 15.1h21V11L32 14.2v17.6ZM11 47.3 29.3 50V34.9H11v12.4Zm21-12.4V50l21 3V34.9H32Z" fill="#00A4EF"/>
+</svg>

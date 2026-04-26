@@ -10,11 +10,6 @@ import { useNavigate } from 'react-router-dom';
 interface CommonGame {
   title: string;
   cover_url: string | null;
-  myGame: {
-    id: string;
-    status: string;
-    rating: number | null;
-  };
   friends: Array<{
     id: string;
     username: string;
@@ -75,11 +70,6 @@ export const CommonGames = ({ userId }: { userId: string }) => {
         commonGameMap.set(myGame.title, {
           title: myGame.title,
           cover_url: myGame.cover_url,
-          myGame: {
-            id: myGame.id,
-            status: myGame.status || 'backlog',
-            rating: myGame.rating,
-          },
           friends: friendsWithGame,
         });
       }

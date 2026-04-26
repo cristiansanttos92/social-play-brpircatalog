@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, MessageSquare } from 'lucide-react';
+import { Play } from 'lucide-react';
 import gamePlaceholder from '@/assets/game-placeholder.jpg';
 import { StarRating } from '@/components/ui/star-rating';
 import { useNavigate } from 'react-router-dom';
@@ -26,40 +25,50 @@ export const ContinuePlaying = ({ games }: ContinuePlayingProps) => {
   }
 
   return (
-    <Card className="mb-8">
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Play className="h-5 w-5" />
-          Continue Jogando
-        </CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Play className="h-5 w-5" />
+            Continue Jogando
+          </CardTitle>
+          <Badge variant="secondary">{games.length}</Badge>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <CardContent className="space-y-3">
           {games.map(game => (
-            <Card
+            <button
               key={game.id}
-              className="overflow-hidden border-border/40 flex flex-col transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 group cursor-pointer"
+              type="button"
+              className="flex w-full items-center gap-4 rounded-xl border border-border/60 p-3 text-left transition-colors hover:bg-muted/50"
               onClick={() => navigate('/catalog')}
             >
-              <div className="aspect-[3/4] relative overflow-hidden bg-secondary">
+              <div className="h-20 w-16 flex-shrink-0 overflow-hidden rounded-md bg-secondary">
                 <img
                   src={game.cover_url || gamePlaceholder}
                   alt={game.title}
                   className="w-full h-full object-cover"
                   onError={(e) => (e.currentTarget.src = gamePlaceholder)}
                 />
-                <Badge className="absolute top-2 right-2 bg-primary">
-                  Jogando
-                </Badge>
               </div>
-              <CardContent className="p-3 flex flex-col flex-grow">
-                <h3 className="font-semibold truncate mb-1 text-sm">{game.title}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{game.platform}</p>
-                {game.rating && <StarRating rating={game.rating} readOnly />}
-              </CardContent>
-            </Card>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold">{game.title}</h3>
+                    <p className="text-xs text-muted-foreground">{game.platform}</p>
+                  </div>
+                  <Badge className="bg-primary">Jogando</Badge>
+                </div>
+                {game.rating ? (
+                  <StarRating rating={game.rating} readOnly />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Sem avaliacao ainda
+                  </p>
+                )}
+              </div>
+            </button>
           ))}
-        </div>
       </CardContent>
     </Card>
   );

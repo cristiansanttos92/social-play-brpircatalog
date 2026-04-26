@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import gamePlaceholder from '@/assets/game-placeholder.jpg';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

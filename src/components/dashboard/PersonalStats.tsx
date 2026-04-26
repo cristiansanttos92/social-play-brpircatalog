@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gamepad2, TrendingUp, Star, Trophy } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 interface PersonalStatsProps {

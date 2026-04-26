@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,9 @@ import { StarRating } from "@/components/ui/star-rating";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CommentsDialog } from "@/components/CommentsDialog";
+import { PageContent, PageHeader } from "@/components/PageShell";
+import { GameDetailsDialog } from "@/components/GameDetailsDialog";
+import { getPlatformIcon } from "@/lib/platform-icons";
 
 interface Game {
   id: string;
@@ -20,6 +22,18 @@ interface Game {
   status: string;
   rating: number | null;
   genre: string | null;
+  summary?: string | null;
+  storyline?: string | null;
+  summary_pt?: string | null;
+  storyline_pt?: string | null;
+  aggregated_rating?: number | null;
+  first_release_date?: number | null;
+  total_rating_count?: number | null;
+  game_modes?: string[];
+  player_perspectives?: string[];
+  themes?: string[];
+  involved_companies?: string[];
+  igdb_id?: number | null;
 }
 
 interface Profile {
@@ -41,6 +55,8 @@ const UserCatalog = () => {
 
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false);
+  const [detailsGame, setDetailsGame] = useState<Game | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -49,6 +65,11 @@ const UserCatalog = () => {
   const openCommentsDialog = (game: Game) => {
     setSelectedGame(game);
     setIsCommentsDialogOpen(true);
+  };
+
+  const openDetailsDialog = (game: Game) => {
+    setDetailsGame(game);
+    setIsDetailsDialogOpen(true);
   };
 
   const checkAuth = async () => {
@@ -90,15 +111,6 @@ const UserCatalog = () => {
     setGames(data || []);
   };
 
-  const getPlatformIcon = (platform: string) => {
-    const lowerPlatform = platform.toLowerCase();
-    if (lowerPlatform.includes('pc') || lowerPlatform.includes('windows')) return 'https://img.icons8.com/color/48/windows-10.png';
-    if (lowerPlatform.includes('playstation') || lowerPlatform.includes('ps4') || lowerPlatform.includes('ps5')) return 'https://img.icons8.com/color/48/playstation.png';
-    if (lowerPlatform.includes('xbox')) return 'https://img.icons8.com/color/48/xbox.png';
-    if (lowerPlatform.includes('nintendo') || lowerPlatform.includes('switch')) return 'https://img.icons8.com/color/48/nintendo-switch.png';
-    return 'https://img.icons8.com/color/48/game-controller.png';
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "playing": return "bg-primary";
@@ -124,7 +136,7 @@ const UserCatalog = () => {
   const renderCardView = () => (
     <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {filteredGames.map((game) => (
-        <Card key={game.id} className="overflow-hidden border-border/40 flex flex-col">
+        <Card key={game.id} className="overflow-hidden border-border/40 flex flex-col cursor-pointer transition-transform duration-200 hover:scale-[1.02] hover:shadow-lg" onClick={() => openDetailsDialog(game)}>
           <div className="aspect-[3/4] relative overflow-hidden bg-secondary">
             <img
               src={game.cover_url || gamePlaceholder}
@@ -144,13 +156,13 @@ const UserCatalog = () => {
             </div>
             {game.rating && <StarRating rating={game.rating} readOnly />}
             <div className="flex items-center gap-2 mt-auto pt-4">
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={(e) => e.stopPropagation()}>
                 <Heart className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => openCommentsDialog(game)}>
+              <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openCommentsDialog(game); }}>
                 <MessageCircle className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={(e) => e.stopPropagation()}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -175,7 +187,7 @@ const UserCatalog = () => {
         </TableHeader>
         <TableBody>
           {filteredGames.map((game) => (
-            <TableRow key={game.id}>
+            <TableRow key={game.id} className="cursor-pointer" onClick={() => openDetailsDialog(game)}>
               <TableCell>
                 <img 
                   src={game.cover_url || gamePlaceholder} 
@@ -199,13 +211,13 @@ const UserCatalog = () => {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={(e) => e.stopPropagation()}>
                     <Heart className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={() => openCommentsDialog(game)}>
+                  <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openCommentsDialog(game); }}>
                     <MessageCircle className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={(e) => e.stopPropagation()}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -219,30 +231,27 @@ const UserCatalog = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
-        <Header profile={currentUserProfile} />
-        
-        <main className="container py-8">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">Catálogo de {userProfile?.display_name || userProfile?.username}</h1>
-              <p className="text-muted-foreground">Explorando a coleção de jogos.</p>
-            </div>
-            <ToggleGroup 
-              type="single" 
-              defaultValue="card"
-              value={viewMode}
-              onValueChange={(value: "card" | "list") => value && setViewMode(value)}
-            >
-              <ToggleGroupItem value="card" aria-label="Mudar para visualização em grade">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="Mudar para visualização em lista">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+      <PageHeader
+        title={`Catálogo de ${userProfile?.display_name || userProfile?.username || ''}`}
+        description="Explorando a coleção de jogos."
+        actions={
+          <ToggleGroup 
+            type="single" 
+            defaultValue="card"
+            value={viewMode}
+            onValueChange={(value: "card" | "list") => value && setViewMode(value)}
+          >
+            <ToggleGroupItem value="card" aria-label="Mudar para visualização em grade">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Mudar para visualização em lista">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        }
+      />
 
+      <PageContent>
           <div className="mb-6">
             <ToggleGroup 
               type="single" 
@@ -266,13 +275,26 @@ const UserCatalog = () => {
           ) : (
             viewMode === 'card' ? renderCardView() : renderListView()
           )}
-        </main>
-      </div>
+      </PageContent>
       <CommentsDialog 
         game={selectedGame}
         currentUser={currentUserProfile}
         isOpen={isCommentsDialogOpen}
         onOpenChange={setIsCommentsDialogOpen}
+      />
+      <GameDetailsDialog
+        game={detailsGame}
+        open={isDetailsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDetailsDialogOpen(open);
+          if (!open) {
+            setDetailsGame(null);
+          }
+        }}
+        onComments={(game) => {
+          openCommentsDialog(game);
+          setIsDetailsDialogOpen(false);
+        }}
       />
     </>
   );

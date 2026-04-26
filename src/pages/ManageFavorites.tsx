@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -11,6 +10,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import gamePlaceholder from "@/assets/game-placeholder.jpg";
+import { PageContent, PageHeader } from "@/components/PageShell";
 
 interface Game {
   id: string;
@@ -140,34 +140,31 @@ const ManageFavorites = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
-        <Header profile={profile} />
-        <main className="container py-8">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">Gerenciar Favoritos</h1>
-              <p className="text-muted-foreground">Arraste e solte para reordenar seus jogos favoritos.</p>
-            </div>
-            <Button onClick={handleSaveChanges} className="bg-gradient-to-r from-primary to-accent hover:opacity-90">Salvar Ordem</Button>
-          </div>
+      <PageHeader
+        title="Gerenciar Favoritos"
+        description="Arraste e solte para reordenar seus jogos favoritos."
+        actions={
+          <Button onClick={handleSaveChanges} className="bg-gradient-to-r from-primary to-accent hover:opacity-90">Salvar Ordem</Button>
+        }
+      />
 
-          <Card>
-            <CardContent className="p-6">
-              {favoriteGames.length > 0 ? (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={favoriteGames.map(g => g.id)} strategy={verticalListSortingStrategy}>
-                    {favoriteGames.map(game => (
-                      <SortableGameItem key={game.id} game={game} />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">Você ainda não tem jogos favoritos.</p>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+      <PageContent>
+        <Card>
+          <CardContent className="p-6">
+            {favoriteGames.length > 0 ? (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={favoriteGames.map(g => g.id)} strategy={verticalListSortingStrategy}>
+                  {favoriteGames.map(game => (
+                    <SortableGameItem key={game.id} game={game} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">Você ainda não tem jogos favoritos.</p>
+            )}
+          </CardContent>
+        </Card>
+      </PageContent>
     </>
   );
 };
