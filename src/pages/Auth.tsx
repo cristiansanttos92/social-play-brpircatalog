@@ -9,15 +9,17 @@ import { Gamepad2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import heroBanner from "@/assets/hero-banner.jpg";
 
+type AuthMode = "login" | "signup" | "reset";
+
 const Auth = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/dashboard");
@@ -25,26 +27,39 @@ const Auth = () => {
     });
   }, [navigate]);
 
+  const resetForm = () => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setLoading(false);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (authMode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
-        
+
         toast({
           title: "Bem-vindo de volta!",
           description: "Login realizado com sucesso.",
         });
-        
         navigate("/dashboard");
-      } else {
+        return;
+      }
+
+      if (authMode === "signup") {
+        if (password !== confirmPassword) {
+          throw new Error("As senhas não coincidem.");
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -57,10 +72,27 @@ const Auth = () => {
 
         toast({
           title: "Conta criada!",
-          description: "Vamos configurar seu perfil agora.",
+          description: "Confira seu email para ativar a conta e continuar.",
         });
-        
-        navigate("/profile-setup");
+        setAuthMode("login");
+        resetForm();
+        return;
+      }
+
+      if (authMode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Email enviado",
+          description: "Verifique seu email para redefinir sua senha.",
+        });
+        setAuthMode("login");
+        resetForm();
+        return;
       }
     } catch (error: any) {
       toast({
@@ -73,14 +105,19 @@ const Auth = () => {
     }
   };
 
+  const handleModeChange = (mode: AuthMode) => {
+    setAuthMode(mode);
+    resetForm();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      <div 
+      <div
         className="absolute inset-0 opacity-20 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroBanner})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
-      
+
       <Card className="w-full max-w-md relative z-10 border-primary/20">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
@@ -92,10 +129,12 @@ const Auth = () => {
             BrpirCatalog
           </CardTitle>
           <CardDescription>
-            {isLogin ? "Entre na sua conta" : "Crie sua conta e organize seus jogos"}
+            {authMode === "login" && "Entre na sua conta para acessar seu catálogo."}
+            {authMode === "signup" && "Crie sua conta e comece a organizar seus jogos."}
+            {authMode === "reset" && "Redefina sua senha enviando um link para o seu email."}
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-2">
@@ -109,36 +148,59 @@ const Auth = () => {
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
 
-            <Button 
-              type="submit" 
+            {authMode !== "reset" && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
+
+            {authMode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
+
+            <Button
+              type="submit"
               className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
               disabled={loading}
             >
-              {loading ? "Processando..." : isLogin ? "Entrar" : "Criar Conta"}
+              {loading
+                ? "Processando..."
+                : authMode === "login"
+                ? "Entrar"
+                : authMode === "signup"
+                ? "Criar Conta"
+                : "Enviar link de redefinição"}
             </Button>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entre"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              {authMode === "login" && (
+                <Button type="button" variant="ghost" className="w-full" onClick={() => handleModeChange("reset")}>Esqueci minha senha</Button>
+              )}
+              <Button type="button" variant="ghost" className="w-full" onClick={() => handleModeChange(authMode === "signup" ? "login" : "signup")}> 
+                {authMode === "signup" ? "Já tem conta? Entre" : "Não tem conta? Cadastre-se"}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

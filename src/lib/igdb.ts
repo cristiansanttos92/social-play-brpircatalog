@@ -219,6 +219,32 @@ export async function searchGameDetailsByName(name: string): Promise<IGDBGame | 
   return containsMatch ?? sortedGames[0];
 }
 
+export async function fetchRecentReleases(limit = 6): Promise<IGDBGame[]> {
+  const token = await getAccessToken();
+
+  const response = await fetch('/api/igdb/games', {
+    method: 'POST',
+    headers: {
+      'Client-ID': IGDB_CLIENT_ID,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'text/plain',
+    },
+    body: `
+      fields ${GAME_FIELDS};
+      where cover != null & first_release_date != null;
+      sort first_release_date desc;
+      limit ${limit};
+    `,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Failed to fetch recent IGDB releases: ${response.status} ${errorText}`);
+  }
+
+  return (await response.json()) as IGDBGame[];
+}
+
 export function getIGDBImageUrl(coverUrl: string): string {
   // A IGDB retorna URLs como //images.igdb.com/...
   // Normaliza para a maior resolução disponível
